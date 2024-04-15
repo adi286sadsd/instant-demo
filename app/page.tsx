@@ -36,6 +36,7 @@ type Schema = {
 
 const db = init<Schema>({ appId: APP_ID })
 
+// @ts-ignore
 const room = db.room('video', '123')
 
 const randomId = Math.random().toString(36).slice(2, 6);
@@ -52,6 +53,7 @@ function App() {
 
 
   useEffect(() => {
+      // @ts-ignore
     publishPresence(user)
   }, [user])
 
@@ -75,10 +77,13 @@ function App() {
 
   const { todos } = data
   return (
+    // @ts-ignore
     <Cursors room={room} currentUserColor="blue">
     <div style={styles.container}>
       <span>{user.name}</span>
-    <button onClick={() => publishEmote({ emoji: '🔥' })}>🔥</button>
+      <button onClick={() => 
+        // @ts-ignore
+        publishEmote({ emoji: '🔥' })}>🔥</button>
       <div style={styles.header}>todos</div>
       <TodoForm todos={todos} />
       <TodoList todos={todos} />
@@ -98,7 +103,8 @@ function App() {
 
 
 function InstantTypingIndicator() {
-  // 1. Set your presence in the room
+  // 1. Set your presence in the room 
+  // @ts-ignore
   room.useSyncPresence(user);
 
   // 2. Use the typing indicator hook
@@ -119,6 +125,7 @@ function InstantTypingIndicator() {
     <div className="flex h-screen gap-3 p-2">
       <div key="main" className="flex flex-1 flex-col justify-end">
         <textarea
+        // @ts-ignore
           onKeyBlur={typing.inputProps.onBlur}
           onKeyDown={onKeyDown}
           placeholder="Compose your message here..."
