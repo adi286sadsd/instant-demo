@@ -266,7 +266,6 @@ function IssueForm({ issues, inputVal}: { issues: Issue[], inputVal : string }) 
           style={styles.input}
           autoFocus
           placeholder="What needs to be done?"
-          type="text"
           onChange={handleInputChange}
           // {(e) => {
             //@ts-ignore
