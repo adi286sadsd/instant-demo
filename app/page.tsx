@@ -258,10 +258,10 @@ function IssueForm({ issues, inputVal}: { issues: Issue[], inputVal : string }) 
     typing.inputProps.onKeyDown(event);
 
      // 4. Optionally run your own onKeyDown logic
-    //  if (event.key === 'Enter' && !event.shiftKey) {
-    //    event.preventDefault();
-    //    console.log('Message sent:', event.target.value);
-    //  }
+     if (event.key === 'Enter' && !event.shiftKey) {
+       event.preventDefault();
+       console.log('Message sent:', event.target.value);
+     }
   };
 
   return (
