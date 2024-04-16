@@ -227,6 +227,14 @@ function toggleAll(issues: Issue[]) {
 // Components
 // ----------
 function IssueForm({ issues, inputVal, publishChange }: { issues: Issue[], inputVal : string, publishChange : Function }) {
+  const [inputValue, setInputValue] = React.useState(inputVal);
+  const handleInputChange = (event) => {
+    setInputValue(event.target.value);
+    publishChange({input : event.target.value})
+    console.log('published change ' + event.target.value)
+  };
+
+
   return (
     <div style={styles.form}>
       <div style={styles.toggleAll} onClick={() => toggleAll(issues)}>
@@ -245,12 +253,14 @@ function IssueForm({ issues, inputVal, publishChange }: { issues: Issue[], input
           autoFocus
           placeholder="What needs to be done?"
           type="text"
-          onChange={(e) => {
+          onChange={handleInputChange}
+          // {(e) => {
             //@ts-ignore
-            publishChange({input : e.target[0].value})
-         }}
+            // publishChange({input : e.target.value})
+        //     console.log("input is " + e.target.value)
+        //  }}
          //@ts-ignore
-         value={inputVal}
+         value={inputValue}
         />
       </form>
     </div>
