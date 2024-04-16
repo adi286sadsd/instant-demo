@@ -8,7 +8,8 @@ const APP_ID = 'eec1b2fb-8f19-43d8-b6d0-d5f6b6bc188d'
 
 // Optional: Declare your schema for intellisense!
 type Schema = {
-  issues: Issue
+  issues: Issue,
+  users: User
 }
 
 // Generic type for room schemas.
@@ -35,38 +36,51 @@ type RoomSchema = {
 
 const randomId = Math.random().toString(36).slice(2, 6);
 const u = {
-  name: `${randomId}`,
+  // name: `${randomId}`,
+  name: 'saurav',
 };
 
 
 const db = init<Schema>({ appId: APP_ID })
 
 // @ts-ignore
-const room = db.room('video', '123')
+const room = db.room('video', '123') 
+
+const user_id = 'f70f8f27-45d9-4cba-9a79-177a8e06aed2';
 
 function App() {
   // Read Data
-  const { isLoading, error, data } = db.useQuery({ issues: {} })
+  const { isLoading, error, data } = db.useQuery({ issues: { author: {} } })
 
   const { user, peers, publishPresence } = room.usePresence()
 
+  useEffect(() => {
+    console.log("user id is " + user_id + 'is loading ' + isLoading)
+      addUser()
+  }, [])
 
   useEffect(() => {
       // @ts-ignore
     publishPresence(u)
+
   }, [user])
   
   if (isLoading) {
+    // addUser('saurav')
     return <div>Fetching data...</div>
   }
   if (error) {
     return <div>Error fetching data: {error.message}</div>
   }
 
+  console.log('Data is ' + JSON.stringify(data))
 
-  const { issues } = data
+  const { issues, users } = data
 
   console.log("issues are " + JSON.stringify(issues))
+
+  console.log('Users are ' + JSON.stringify(users))
+  
   return (
     // @ts-ignore
     <Cursors room={room} currentUserColor="blue">
@@ -86,7 +100,6 @@ function App() {
 
   
 }
-
 
 
 
@@ -139,17 +152,23 @@ function typingInfo(users) {
 
 // Write Data
 // ---------
+
 function addIssue(text: string) {
   db.transact(
     tx.issues[id()].update({
       text,
       done: false,
       createdAt: Date.now(),
-      author : {
-        id : "fsdfsadf",
-        email : "sdfsfs",
-        handle : "asfdsdfs",
-      }
+    }).link({author: user_id})
+  )
+}
+
+function addUser() {
+  console.log("user id is asdf " + user_id)
+  db.transact(
+    tx.users[user_id].update({
+      email: u.name,
+      handle: u.name,
     })
   )
 }
@@ -200,6 +219,7 @@ function IssueForm({ issues }: { issues: Issue[] }) {
 }
 
 function IssueList({ issues }: { issues: Issue[] }) {
+  console.log("issue is " + JSON.stringify(issues)) 
   return (
     <div style={styles.issueList}>
       {issues.map((issue) => (
@@ -214,10 +234,10 @@ function IssueList({ issues }: { issues: Issue[] }) {
           <div style={styles.issueText}>
             {issue.done ? (
               <span style={{ textDecoration: 'line-through' }}>
-                {issue.text} Created by {issue.author.email}
+                {issue.text} Created by {issue.author?.email}
               </span>
             ) : (
-              <span>{issue.text} Created by {issue.author.email}</span>
+              <span>{issue.text} Created by {issue.author?.email}</span>
             )}
           </div>
           <span onClick={() => deleteIssue(issue)} style={styles.delete}>
@@ -242,23 +262,25 @@ function ActionBar({ issues }: { issues: Issue[] }) {
 
 // Types
 // ----------
+type Author = {
+  id: string
+  email : string
+  handle : string
+
+}
 type Issue = {
   id: string
   text: string
   done: boolean
   createdAt: number
-  author : {
-    id: string
-    email : string
-    handle : string
-  }
+  author : User
 }
 
-// type User = {
-//   id: string
-//   email : string
-//   handle : string
-// }
+type User = {
+  id: string
+  email : string
+  handle : string
+}
 
 // users {
 //   id: UUID,
