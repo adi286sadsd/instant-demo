@@ -8,7 +8,7 @@ const APP_ID = 'eec1b2fb-8f19-43d8-b6d0-d5f6b6bc188d'
 
 // Optional: Declare your schema for intellisense!
 type Schema = {
-  todos: Todo
+  issues: Issue
 }
 
 // Generic type for room schemas.
@@ -23,15 +23,20 @@ type Schema = {
 //   };
 // };
 
-// // A concrete example
-// type RoomSchema {
-//   video: {
-//     presence: { handle: string; avatarUrl: string; color: string };
-//     topics: {
-//       reaction: { emoji: string };
-//     };
-//   };
-// }
+// A concrete example
+type RoomSchema = {
+  chat: {
+    presence: { name: string;};
+    topics: {
+      reaction: { emoji: string };
+    };
+  };
+}
+
+const randomId = Math.random().toString(36).slice(2, 6);
+const u = {
+  name: `${randomId}`,
+};
 
 
 const db = init<Schema>({ appId: APP_ID })
@@ -39,31 +44,17 @@ const db = init<Schema>({ appId: APP_ID })
 // @ts-ignore
 const room = db.room('video', '123')
 
-const randomId = Math.random().toString(36).slice(2, 6);
-const user = {
-  name: `${randomId}`,
-};
-
-
 function App() {
   // Read Data
-  const { isLoading, error, data } = db.useQuery({ todos: {} })
+  const { isLoading, error, data } = db.useQuery({ issues: {} })
 
   const { user, peers, publishPresence } = room.usePresence()
 
 
   useEffect(() => {
       // @ts-ignore
-    publishPresence(user)
+    publishPresence(u)
   }, [user])
-
-  const publishEmote = room.usePublishTopic('emotes')
-  
-  room.useTopicEffect('emotes', (event, peer) => {
-    // Render broadcasted emotes!
-    alert("emoji is clicked!")
-  })
-
   
   if (isLoading) {
     return <div>Fetching data...</div>
@@ -73,25 +64,22 @@ function App() {
   }
 
 
-  
+  const { issues } = data
 
-  const { todos } = data
+  console.log("issues are " + JSON.stringify(issues))
   return (
     // @ts-ignore
     <Cursors room={room} currentUserColor="blue">
     <div style={styles.container}>
-      <span>{user.name}</span>
-      <button onClick={() => 
-        // @ts-ignore
-        publishEmote({ emoji: '🔥' })}>🔥</button>
-      <div style={styles.header}>todos</div>
-      <TodoForm todos={todos} />
-      <TodoList todos={todos} />
-      <ActionBar todos={todos} />
+      <span>who is online ? {user.name} </span>
+      
+      <div style={styles.header}>issues</div>
+      <IssueForm issues={issues} />
+      <IssueList issues={issues} />
+      <ActionBar issues={issues} />
       <div style={styles.footer}>
-        Open another tab to see todos update in realtime!
+        Open another tab to see issues update in realtime!
       </div>
-      <InstantTypingIndicator/>
     </div>
     </Cursors>
   )
@@ -151,47 +139,52 @@ function typingInfo(users) {
 
 // Write Data
 // ---------
-function addTodo(text: string) {
+function addIssue(text: string) {
   db.transact(
-    tx.todos[id()].update({
+    tx.issues[id()].update({
       text,
       done: false,
       createdAt: Date.now(),
+      author : {
+        id : "fsdfsadf",
+        email : "sdfsfs",
+        handle : "asfdsdfs",
+      }
     })
   )
 }
 
-function deleteTodo(todo: Todo) {
-  db.transact(tx.todos[todo.id].delete())
+function deleteIssue(issue: Issue) {
+  db.transact(tx.issues[issue.id].delete())
 }
 
-function toggleDone(todo: Todo) {
-  db.transact(tx.todos[todo.id].update({ done: !todo.done }))
+function toggleDone(issue: Issue) {
+  db.transact(tx.issues[issue.id].update({ done: !issue.done }))
 }
 
-function deleteCompleted(todos: Todo[]) {
-  const completed = todos.filter((todo) => todo.done)
-  const txs = completed.map((todo) => tx.todos[todo.id].delete())
+function deleteCompleted(issues: Issue[]) {
+  const completed = issues.filter((issue) => issue.done)
+  const txs = completed.map((issue) => tx.issues[issue.id].delete())
   db.transact(txs)
 }
 
-function toggleAll(todos: Todo[]) {
-  const newVal = !todos.every((todo) => todo.done)
-  db.transact(todos.map((todo) => tx.todos[todo.id].update({ done: newVal })))
+function toggleAll(issues: Issue[]) {
+  const newVal = !issues.every((issue) => issue.done)
+  db.transact(issues.map((issue) => tx.issues[issue.id].update({ done: newVal })))
 }
 
 // Components
 // ----------
-function TodoForm({ todos }: { todos: Todo[] }) {
+function IssueForm({ issues }: { issues: Issue[] }) {
   return (
     <div style={styles.form}>
-      <div style={styles.toggleAll} onClick={() => toggleAll(todos)}>
+      <div style={styles.toggleAll} onClick={() => toggleAll(issues)}>
         ⌄
       </div>
       <form
         onSubmit={(e) => {
           e.preventDefault()
-          addTodo(e.target[0].value)
+          addIssue(e.target[0].value)
           e.target[0].value = ''
         }}
       >
@@ -206,28 +199,28 @@ function TodoForm({ todos }: { todos: Todo[] }) {
   )
 }
 
-function TodoList({ todos }: { todos: Todo[] }) {
+function IssueList({ issues }: { issues: Issue[] }) {
   return (
-    <div style={styles.todoList}>
-      {todos.map((todo) => (
-        <div key={todo.id} style={styles.todo}>
+    <div style={styles.issueList}>
+      {issues.map((issue) => (
+        <div key={issue.id} style={styles.issue}>
           <input
             type="checkbox"
-            key={todo.id}
+            key={issue.id}
             style={styles.checkbox}
-            checked={todo.done}
-            onChange={() => toggleDone(todo)}
+            checked={issue.done}
+            onChange={() => toggleDone(issue)}
           />
-          <div style={styles.todoText}>
-            {todo.done ? (
+          <div style={styles.issueText}>
+            {issue.done ? (
               <span style={{ textDecoration: 'line-through' }}>
-                {todo.text}
+                {issue.text} Created by {issue.author.email}
               </span>
             ) : (
-              <span>{todo.text}</span>
+              <span>{issue.text} Created by {issue.author.email}</span>
             )}
           </div>
-          <span onClick={() => deleteTodo(todo)} style={styles.delete}>
+          <span onClick={() => deleteIssue(issue)} style={styles.delete}>
             𝘟
           </span>
         </div>
@@ -236,11 +229,11 @@ function TodoList({ todos }: { todos: Todo[] }) {
   )
 }
 
-function ActionBar({ todos }: { todos: Todo[] }) {
+function ActionBar({ issues }: { issues: Issue[] }) {
   return (
     <div style={styles.actionBar}>
-      <div>Remaining todos: {todos.filter((todo) => !todo.done).length}</div>
-      <div style={{ cursor: 'pointer' }} onClick={() => deleteCompleted(todos)}>
+      <div>Remaining issues: {issues.filter((issue) => !issue.done).length}</div>
+      <div style={{ cursor: 'pointer' }} onClick={() => deleteCompleted(issues)}>
         Delete Completed
       </div>
     </div>
@@ -249,12 +242,48 @@ function ActionBar({ todos }: { todos: Todo[] }) {
 
 // Types
 // ----------
-type Todo = {
+type Issue = {
   id: string
   text: string
   done: boolean
   createdAt: number
+  author : {
+    id: string
+    email : string
+    handle : string
+  }
 }
+
+// type User = {
+//   id: string
+//   email : string
+//   handle : string
+// }
+
+// users {
+//   id: UUID,
+//   email: string :is_unique,
+//   handle: string :is_unique :is_indexed,
+//   createdAt: number,
+//   :has_many issues
+//   :has_many comments
+// }
+
+// issues {
+//   id: UUID,
+//   text: string,
+//   createdAt: number,
+//   :has_many comments,
+//   :belongs_to author :through users,
+// }
+
+// comments {
+//   id: UUID,
+//   text: string,
+//   :belongs_to issue,
+//   :belongs_to author :through users
+// }
+
 
 // Styles
 // ----------
@@ -297,7 +326,7 @@ const styles: Record<string, React.CSSProperties> = {
     padding: '10px',
     fontStyle: 'italic',
   },
-  todoList: {
+  issueList: {
     boxSizing: 'inherit',
     width: '350px',
   },
@@ -307,14 +336,14 @@ const styles: Record<string, React.CSSProperties> = {
     marginRight: '20px',
     cursor: 'pointer',
   },
-  todo: {
+  issue: {
     display: 'flex',
     alignItems: 'center',
     padding: '10px',
     border: '1px solid lightgray',
     borderBottomWidth: '0px',
   },
-  todoText: {
+  issueText: {
     flexGrow: '1',
     overflow: 'hidden',
   },
