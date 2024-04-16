@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react'
 import { init, tx, id, Cursors } from '@instantdb/react'
+import { StringIterator } from 'lodash'
 
 // Visit https://instantdb.com/dash to get your APP_ID :)
 const APP_ID = 'eec1b2fb-8f19-43d8-b6d0-d5f6b6bc188d'
@@ -9,7 +10,8 @@ const APP_ID = 'eec1b2fb-8f19-43d8-b6d0-d5f6b6bc188d'
 // Optional: Declare your schema for intellisense!
 type Schema = {
   issues: Issue,
-  users: User
+  users: User,
+  comments : Comment
 }
 
 // Generic type for room schemas.
@@ -37,20 +39,40 @@ type RoomSchema = {
 const randomId = Math.random().toString(36).slice(2, 6);
 const u = {
   // name: `${randomId}`,
-  name: 'saurav',
+  name: 'adi',
 };
 
 
 const db = init<Schema>({ appId: APP_ID })
 
 // @ts-ignore
-const room = db.room('video', '123') 
+const room = db.room('issues', '1232424') 
 
-const user_id = 'f70f8f27-45d9-4cba-9a79-177a8e06aed2';
+const user_id = 'f70f8f25-45d9-4cba-9a79-177a8e06aed2';
 
 function App() {
   // Read Data
-  const { isLoading, error, data } = db.useQuery({ issues: { author: {} } })
+  const { isLoading, error, data } = db.useQuery(
+  { 
+    issues: { 
+      author: {},
+      comments : {} 
+    },
+    
+    users:{
+      issues : {},
+      comments : {}
+    },
+
+    comments : {
+      $ : {
+        where : {
+          'author.email' : 'adi'
+        }
+      },
+      author : {}
+    }
+  })
 
   const { user, peers, publishPresence } = room.usePresence()
 
@@ -62,7 +84,6 @@ function App() {
   useEffect(() => {
       // @ts-ignore
     publishPresence(u)
-
   }, [user])
   
   if (isLoading) {
@@ -75,11 +96,12 @@ function App() {
 
   console.log('Data is ' + JSON.stringify(data))
 
-  const { issues, users } = data
+  const { issues, users, comments } = data
 
   console.log("issues are " + JSON.stringify(issues))
-
-  console.log('Users are ' + JSON.stringify(users))
+  console.log("users are " + JSON.stringify(users))
+  console.log("comments are " + JSON.stringify(comments))
+  // console.log('Users are ' + JSON.stringify(users))
   
   return (
     // @ts-ignore
@@ -97,7 +119,6 @@ function App() {
     </div>
     </Cursors>
   )
-
   
 }
 
@@ -153,16 +174,6 @@ function typingInfo(users) {
 // Write Data
 // ---------
 
-function addIssue(text: string) {
-  db.transact(
-    tx.issues[id()].update({
-      text,
-      done: false,
-      createdAt: Date.now(),
-    }).link({author: user_id})
-  )
-}
-
 function addUser() {
   console.log("user id is asdf " + user_id)
   db.transact(
@@ -172,6 +183,19 @@ function addUser() {
     })
   )
 }
+
+
+function addIssue(text: string) {
+  const issued_id = id()
+  db.transact([
+    tx.issues[issued_id].update({
+      text,
+      done: false,
+      createdAt: Date.now(),
+    }).link({author: user_id})
+  ])
+}
+
 
 function deleteIssue(issue: Issue) {
   db.transact(tx.issues[issue.id].delete())
@@ -218,11 +242,12 @@ function IssueForm({ issues }: { issues: Issue[] }) {
   )
 }
 
-function IssueList({ issues }: { issues: Issue[] }) {
+function IssueList({ issues} : { issues: Issue[]}) {
   console.log("issue is " + JSON.stringify(issues)) 
   return (
     <div style={styles.issueList}>
       {issues.map((issue) => (
+        <div style={styles.issueList}>
         <div key={issue.id} style={styles.issue}>
           <input
             type="checkbox"
@@ -234,17 +259,122 @@ function IssueList({ issues }: { issues: Issue[] }) {
           <div style={styles.issueText}>
             {issue.done ? (
               <span style={{ textDecoration: 'line-through' }}>
-                {issue.text} Created by {issue.author?.email}
+                {issue.text} Created by {issue.author[0]?.email}
               </span>
             ) : (
-              <span>{issue.text} Created by {issue.author?.email}</span>
+              <span>{issue.text} Created by {issue.author[0]?.email}</span>
             )}
           </div>
           <span onClick={() => deleteIssue(issue)} style={styles.delete}>
             𝘟
           </span>
         </div>
+          <div style={styles.issueList}>
+            <CommentForm issue={issue} comments={issue.comments} />
+            <CommentList comments={issue.comments} />
+            <ActionBarComment comments={issue.comments} />
+          </div>
+        </div>
       ))}
+      
+    </div>
+  )
+}
+
+
+function addComment(text: string, issueId : string) {
+  db.transact([
+    tx.comments[id()].update({
+      text,
+      done : false,
+      createdAt: Date.now(),
+    }).link({issue : issueId, author : user_id})
+  ])
+}
+
+
+function deleteComment(comment: Comment) {
+  db.transact(tx.comments[comment.id].delete())
+}
+
+function toggleDoneComments(comment: Comment) {
+  db.transact(tx.comments[comment.id].update({ done: !comment.done }))
+}
+
+function deleteCompletedComments(comments: Comment[]) {
+  const completed = comments.filter((comment) => comment.done)
+  const txs = completed.map((comment) => tx.comments[comment.id].delete())
+  db.transact(txs)
+}
+
+function toggleAllComments(comments: Comment[]) {
+  const newVal = !comments.every((comment) => comment.done)
+  db.transact(comments.map((comment) => tx.comments[comment.id].update({ done: newVal })))
+}
+
+
+function CommentForm({issue, comments }: { issue : Issue, comments: Comment[] }) {
+  return (
+    <div style={styles.form}>
+      <div style={styles.toggleAll} onClick={() => toggleAllComments(comments)}>
+      </div>
+      <form
+        onSubmit={(e) => {
+          e.preventDefault()
+          addComment(e.target[0].value, issue.id)
+          e.target[0].value = ''
+        }}
+      >
+        <input
+          style={styles.input}
+          autoFocus
+          placeholder="What needs to be done?"
+          type="text"
+        />
+      </form>
+    </div>
+  )
+}
+
+
+function CommentList({ comments }: { comments: Comment[] }) {
+  console.log("comment is " + JSON.stringify(comments)) 
+  return (
+    <div style={styles.commentList}>
+      {comments.map((comment) => (
+        <div key={comment.id} style={styles.comment}>
+          <input
+            type="checkbox"
+            key={comment.id}
+            style={styles.checkbox}
+            checked={comment.done}
+            onChange={() => toggleDoneComments(comment)}
+          />
+          <div style={styles.commentText}>
+            {comment.done ? (
+              <span style={{ textDecoration: 'line-through' }}>
+                {comment.text} Created by {comment.author?.email}
+              </span>
+            ) : (
+              <span>{comment.text} Created by {comment.author?.email}</span>
+            )}
+          </div>
+          <span onClick={() => deleteComment(comment)} style={styles.delete}>
+            𝘟
+          </span>
+        </div>
+      ))}
+    </div>
+  )
+}
+
+function ActionBarComment({ comments }: { comments: Comment[] }) {
+  return (
+    <div style={styles.actionBar}>
+      <div>Remaining comments: {comments.filter((comment) => !comment.done).length}</div>
+      <div style={{ cursor: 'pointer' }} onClick={() => deleteCompletedComments(comments)}>
+        Delete Completed
+      </div>
     </div>
   )
 }
@@ -273,7 +403,8 @@ type Issue = {
   text: string
   done: boolean
   createdAt: number
-  author : User
+  author : User[]
+  comments : Comment[]
 }
 
 type User = {
@@ -282,6 +413,14 @@ type User = {
   handle : string
 }
 
+type Comment = {
+  id : string
+  text : string
+  done : boolean
+  createdAt : number
+  author : User
+  issue : Issue 
+}
 // users {
 //   id: UUID,
 //   email: string :is_unique,
