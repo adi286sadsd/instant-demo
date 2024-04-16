@@ -89,13 +89,14 @@ function App() {
     publishPresence(u)
   }, [user])
   
-  const publishChange = room.usePublishTopic('input')
+  // const publishChange = room.usePublishTopic('input')
 
-  room.useTopicEffect('input', (event, peer) => {
-    // Render broadcasted emotes!
-    //@ts-ignore
-    setInput(event.input)
-  })
+  // room.useTopicEffect('input', (event, peer) => {
+  //   // Render broadcasted emotes!
+  //   //@ts-ignore
+  //   console.log('input is ' + event.input);
+  //   setInput(event.input)
+  // })
 
   if (isLoading) {
     // addUser('saurav')
@@ -118,7 +119,7 @@ function App() {
       <span>who is online ? {user.name} </span>
       
       <div style={styles.header}>issues</div>
-      <IssueForm issues={issues} inputVal={inputVal} publishChange={publishChange}/>
+      <IssueForm issues={issues} inputVal={inputVal}/>
       <IssueList issues={issues} />
       <ActionBar issues={issues} />
       <div style={styles.footer}>
@@ -226,10 +227,23 @@ function toggleAll(issues: Issue[]) {
 
 // Components
 // ----------
-function IssueForm({ issues, inputVal, publishChange }: { issues: Issue[], inputVal : string, publishChange : Function }) {
+function IssueForm({ issues, inputVal}: { issues: Issue[], inputVal : string }) {
   const [inputValue, setInputValue] = React.useState(inputVal);
+
+  const publishChange = room.usePublishTopic('input')
+
+  room.useTopicEffect('input', (event, peer) => {
+    // Render broadcasted emotes!
+    //@ts-ignore
+    console.log('input is ' + event.input);
+    //@ts-ignore
+    setInputValue(event.input)
+  })
+
+
   const handleInputChange = (event) => {
     setInputValue(event.target.value);
+    //@ts-ignore
     publishChange({input : event.target.value})
     console.log('published change ' + event.target.value)
   };
