@@ -39,7 +39,7 @@ type RoomSchema = {
 const randomId = Math.random().toString(36).slice(2, 6);
 const u = {
   // name: `${randomId}`,
-  name: 'adi',
+  name: 'saurav2',
 };
 
 
@@ -48,7 +48,7 @@ const db = init<Schema>({ appId: APP_ID })
 // @ts-ignore
 const room = db.room('issues', '1232424') 
 
-const user_id = 'f70f8f25-45d9-4cba-9a79-177a8e06aed2';
+const user_id = 'f70f8f25-45d9-4cba-9a79-177a8e06aed3';
 
 function App() {
   // Read Data
@@ -56,28 +56,30 @@ function App() {
   { 
     issues: { 
       author: {},
-      comments : {} 
+      comments : {
+        author: {},
+      } 
     },
     
-    users:{
-      issues : {},
-      comments : {}
-    },
+    // users:{
+    //   issues : {},
+    //   comments : {}
+    // },
 
-    comments : {
-      $ : {
-        where : {
-          'author.email' : 'adi'
-        }
-      },
-      author : {}
-    }
+    // comments : {
+    //   // $ : {
+    //   //   where : {
+    //   //     'author.email' : 'adi'
+    //   //   }
+    //   // },
+    //   author : {}
+    // }
   })
 
   const { user, peers, publishPresence } = room.usePresence()
 
   useEffect(() => {
-    console.log("user id is " + user_id + 'is loading ' + isLoading)
+    console.log("user id is " + user_id + 'is loading ' + isLoading + ' env user is ' + process.env.REACT_APP_USER_ID)
       addUser()
   }, [])
 
@@ -96,12 +98,9 @@ function App() {
 
   console.log('Data is ' + JSON.stringify(data))
 
-  const { issues, users, comments } = data
+  const { issues } = data
 
   console.log("issues are " + JSON.stringify(issues))
-  console.log("users are " + JSON.stringify(users))
-  console.log("comments are " + JSON.stringify(comments))
-  // console.log('Users are ' + JSON.stringify(users))
   
   return (
     // @ts-ignore
@@ -353,10 +352,10 @@ function CommentList({ comments }: { comments: Comment[] }) {
           <div style={styles.commentText}>
             {comment.done ? (
               <span style={{ textDecoration: 'line-through' }}>
-                {comment.text} Created by {comment.author?.email}
+                {comment.text} Created by {comment.author[0]?.email}
               </span>
             ) : (
-              <span>{comment.text} Created by {comment.author?.email}</span>
+              <span>{comment.text} Created by {comment.author[0]?.email}</span>
             )}
           </div>
           <span onClick={() => deleteComment(comment)} style={styles.delete}>
@@ -392,12 +391,6 @@ function ActionBar({ issues }: { issues: Issue[] }) {
 
 // Types
 // ----------
-type Author = {
-  id: string
-  email : string
-  handle : string
-
-}
 type Issue = {
   id: string
   text: string
