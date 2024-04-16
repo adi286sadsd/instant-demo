@@ -38,7 +38,7 @@ type RoomSchema = {
 const randomId = Math.random().toString(36).slice(2, 6);
 const u = {
   // name: `${randomId}`,
-  name: 'saurav2',
+  name: 'aditya',
 };
 
 
