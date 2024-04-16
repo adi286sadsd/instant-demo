@@ -1,8 +1,7 @@
 'use client'
 
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { init, tx, id, Cursors } from '@instantdb/react'
-import { StringIterator } from 'lodash'
 
 // Visit https://instantdb.com/dash to get your APP_ID :)
 const APP_ID = 'eec1b2fb-8f19-43d8-b6d0-d5f6b6bc188d'
@@ -50,6 +49,8 @@ const room = db.room('issues', '1232424')
 
 const user_id = 'f70f8f25-45d9-4cba-9a79-177a8e06aed2';
 
+const publishChange = room.usePublishTopic('input')
+
 function App() {
   // Read Data
   const { isLoading, error, data } = db.useQuery(
@@ -75,6 +76,7 @@ function App() {
   })
 
   const { user, peers, publishPresence } = room.usePresence()
+  const [ inputVal, setInput ] = useState('')
 
   useEffect(() => {
     console.log("user id is " + user_id + 'is loading ' + isLoading)
@@ -86,6 +88,14 @@ function App() {
     publishPresence(u)
   }, [user])
   
+ 
+
+  room.useTopicEffect('input', (event, peer) => {
+    // Render broadcasted emotes!
+    //@ts-ignore
+    setInput(event.input)
+  })
+
   if (isLoading) {
     // addUser('saurav')
     return <div>Fetching data...</div>
@@ -110,7 +120,7 @@ function App() {
       <span>who is online ? {user.name} </span>
       
       <div style={styles.header}>issues</div>
-      <IssueForm issues={issues} />
+      <IssueForm issues={issues} inputVal={inputVal} />
       <IssueList issues={issues} />
       <ActionBar issues={issues} />
       <div style={styles.footer}>
@@ -130,7 +140,7 @@ function InstantTypingIndicator() {
   room.useSyncPresence(user);
 
   // 2. Use the typing indicator hook
-  const typing = room.useTypingIndicator('chat');
+  const typing = room.useTypingIndicator('issues');
 
   const onKeyDown = (e) => {
     // 3. Render typing indicator
@@ -218,24 +228,31 @@ function toggleAll(issues: Issue[]) {
 
 // Components
 // ----------
-function IssueForm({ issues }: { issues: Issue[] }) {
+function IssueForm({ issues, inputVal }: { issues: Issue[], inputVal : string }) {
   return (
     <div style={styles.form}>
       <div style={styles.toggleAll} onClick={() => toggleAll(issues)}>
         ⌄
       </div>
       <form
+         
         onSubmit={(e) => {
           e.preventDefault()
           addIssue(e.target[0].value)
           e.target[0].value = ''
-        }}
-      >
+        }}>
+          
         <input
           style={styles.input}
           autoFocus
           placeholder="What needs to be done?"
           type="text"
+          onChange={(e) => {
+            //@ts-ignore
+            publishChange({input : e.target[0].value})
+         }}
+         //@ts-ignore
+         value={inputVal}
         />
       </form>
     </div>
