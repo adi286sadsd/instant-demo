@@ -2,7 +2,6 @@
 
 import React, { useEffect } from 'react'
 import { init, tx, id, Cursors } from '@instantdb/react'
-import { StringIterator } from 'lodash'
 
 // Visit https://instantdb.com/dash to get your APP_ID :)
 const APP_ID = 'eec1b2fb-8f19-43d8-b6d0-d5f6b6bc188d'
