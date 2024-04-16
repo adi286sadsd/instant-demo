@@ -262,7 +262,7 @@ function IssueForm({ issues, inputVal}: { issues: Issue[], inputVal : string }) 
           e.target[0].value = ''
         }}>
           
-        <input
+        <textarea
           style={styles.input}
           autoFocus
           placeholder="What needs to be done?"
