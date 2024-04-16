@@ -241,13 +241,28 @@ function IssueForm({ issues, inputVal}: { issues: Issue[], inputVal : string }) 
   })
 
 
+  // 1. Set your presence in the room 
+  // @ts-ignore
+  room.useSyncPresence(u);
+
+  // 2. Use the typing indicator hook
+  const typing = room.useTypingIndicator('issues');
+
   const handleInputChange = (event) => {
     setInputValue(event.target.value);
     //@ts-ignore
     publishChange({input : event.target.value})
     console.log('published change ' + event.target.value)
-  };
 
+    // 3. Render typing indicator
+    typing.inputProps.onKeyDown(event);
+
+     // 4. Optionally run your own onKeyDown logic
+    //  if (event.key === 'Enter' && !event.shiftKey) {
+    //    event.preventDefault();
+    //    console.log('Message sent:', event.target.value);
+    //  }
+  };
 
   return (
     <div style={styles.form}>
@@ -261,12 +276,15 @@ function IssueForm({ issues, inputVal}: { issues: Issue[], inputVal : string }) 
           addIssue(e.target[0].value)
           e.target[0].value = ''
         }}>
-          
+        <div key="main" className="flex flex-1 flex-col justify-end">  
         <textarea
           style={styles.input}
           autoFocus
           placeholder="What needs to be done?"
-          onChange={handleInputChange}
+          onChange={
+            handleInputChange
+            
+          }
           // {(e) => {
             //@ts-ignore
             // publishChange({input : e.target.value})
@@ -275,6 +293,10 @@ function IssueForm({ issues, inputVal}: { issues: Issue[], inputVal : string }) 
          //@ts-ignore
          value={inputValue}
         />
+        <div className="truncate text-xs text-gray-500">
+          {typing.active.length ? typingInfo(typing.active) : <>&nbsp;</>}
+        </div>
+        </div>
       </form>
     </div>
   )
