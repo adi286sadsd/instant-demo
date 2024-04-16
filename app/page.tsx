@@ -49,7 +49,6 @@ const room = db.room('issues', '1232424')
 
 const user_id = 'f70f8f25-45d9-4cba-9a79-177a8e06aed3';
 
-const publishChange = room.usePublishTopic('input')
 
 function App() {
   // Read Data
@@ -90,7 +89,7 @@ function App() {
     publishPresence(u)
   }, [user])
   
- 
+  const publishChange = room.usePublishTopic('input')
 
   room.useTopicEffect('input', (event, peer) => {
     // Render broadcasted emotes!
@@ -119,7 +118,7 @@ function App() {
       <span>who is online ? {user.name} </span>
       
       <div style={styles.header}>issues</div>
-      <IssueForm issues={issues} inputVal={inputVal} />
+      <IssueForm issues={issues} inputVal={inputVal} publishChange={publishChange}/>
       <IssueList issues={issues} />
       <ActionBar issues={issues} />
       <div style={styles.footer}>
@@ -227,7 +226,7 @@ function toggleAll(issues: Issue[]) {
 
 // Components
 // ----------
-function IssueForm({ issues, inputVal }: { issues: Issue[], inputVal : string }) {
+function IssueForm({ issues, inputVal, publishChange }: { issues: Issue[], inputVal : string, publishChange : Function }) {
   return (
     <div style={styles.form}>
       <div style={styles.toggleAll} onClick={() => toggleAll(issues)}>
